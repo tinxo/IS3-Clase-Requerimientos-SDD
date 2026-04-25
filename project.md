@@ -44,7 +44,26 @@ Cobertura mínima: flujo exitoso + al menos dos casos de error por endpoint
 
 3. Estructura del repositorio
 
-(completar dependiendo de lo anterior)
+Backend (estructura interna de cada módulo)
+
+```
+src/
+  controllers/    ← Recibe requests HTTP, delega, devuelve respuestas
+  services/       ← Lógica de negocio (nunca en controllers)
+  repositories/   ← Acceso a la base de datos vía Prisma
+  routes/         ← Definición de endpoints y asignación de middlewares
+  middlewares/    ← Validación de esquemas con Zod
+```
+
+Frontend (estructura compartida)
+
+```
+src/
+  pages/          ← Una página por flujo principal
+  components/     ← Componentes reutilizables (formularios, tablas, badges)
+  services/       ← Funciones fetch para llamar a la API
+  hooks/          ← Custom hooks por dominio (ej: useTurnos, usePaciente)
+```
 
 4. Convenciones de código
 
@@ -74,6 +93,18 @@ En caso de error:
   "message": "Error de validación"
 }
 
+Códigos HTTP estándar
+
+| Código | Cuándo usarlo |
+|--------|---------------|
+| 200 | Operación exitosa (GET, PATCH, PUT) |
+| 201 | Recurso creado (POST) |
+| 400 | Error de validación de formato o campos |
+| 404 | Recurso no encontrado |
+| 409 | Conflicto de unicidad (ej: DNI duplicado activo) |
+| 422 | Error de lógica de negocio (ej: transición de estado inválida) |
+| 500 | Error interno del servidor |
+
 6. Modelos de datos compartidos
 
 Estos modelos tienen que ser usados por todos los módulos. Se definen en (el archivo de schema del ORM) y no se deben reimplementar.
@@ -93,8 +124,33 @@ model Paciente {
   actualizadoEn   DateTime @updatedAt
 }
 
+Medico
+
+model Medico {
+  id            Int      @id @default(autoincrement())
+  nombre        String
+  apellido      String
+  matricula     String   @unique
+  especialidad  String
+  telefono      String?
+  email         String?
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+}
+
 
 7. Roles del sistema
+
+Los roles que existen en el sistema. Cada módulo define en su spec qué acciones puede realizar cada rol dentro de ese módulo.
+
+| Rol | Descripción |
+|-----|-------------|
+| Recepcionista | Registra ingresos y gestiona turnos |
+| Enfermero | Realiza evaluaciones de triage |
+| Médico | Atiende pacientes, emite diagnósticos y cierres |
+| Administrador | Acceso completo al sistema |
+
+Para esta práctica: el rol se selecciona en una pantalla simple al entrar al sistema. Sin autenticación real ni JWT.
 
 8. Dependencias aprobadas
 

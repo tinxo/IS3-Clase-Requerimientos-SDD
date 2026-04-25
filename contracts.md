@@ -31,6 +31,43 @@ MedicoResumen {
 
 ## Sección 2 — Catálogo de endpoints públicos por módulo
 
+M2 — Turnos y Agenda
+
+GET /api/turnos/disponibles?especialidad=&medicoId=&desde=&hasta=
+Devuelve turnos disponibles en los próximos 30 días. Usado por el frontend de recepción y potencialmente por M5 (Reportes).
+
+{
+  "data": [
+    {
+      "id": 15,
+      "medico": { "...":  "MedicoResumen" },
+      "fecha": "2025-07-01T09:00:00Z",
+      "duracionMinutos": 20,
+      "estado": "DISPONIBLE"
+    }
+  ],
+  "error": null,
+  "message": "OK"
+}
+
+GET /api/turnos/:id
+Detalle de un turno. Puede ser usado por M5 (Reportes).
+
+{
+  "data": {
+    "id": 15,
+    "medico": { "...": "MedicoResumen" },
+    "paciente": { "...": "PacienteResumen" },
+    "fecha": "2025-07-01T09:00:00Z",
+    "duracionMinutos": 20,
+    "estado": "RESERVADO",
+    "motivoConsulta": "Control de rutina",
+    "reservadoEn": "2025-06-20T10:00:00Z"
+  },
+  "error": null,
+  "message": "OK"
+}
+
 M1 — Emergencias
 
 GET /api/emergencias/atenciones/activas

@@ -1,9 +1,11 @@
-# spec.md — Sistema de Registro de Pacientes en Emergencias
+# spec.md — Emergencias y Triage (M1)
 
-> **Versión:** 1.0  
-> **Fecha:** 2025-06  
-> **Estado:** Borrador inicial  
-> **Stack aprobado:** React + Node.js + PostgreSQL
+> **Módulo:** M1 — Emergencias y Triage
+> **Responsable:** —
+> **Versión:** 1.0 | **Estado:** Borrador | **Última revisión:** 2025-06
+>
+> **Stack, convenciones y modelos compartidos:** ver `/project.md` — no se repiten acá.
+> **Interfaces con otros módulos:** ver `/contracts.md §M1`.
 
 ---
 
@@ -134,7 +136,9 @@ ESPERANDO_TRIAGE → EN_ESPERA_MEDICO → ALTA
 
 Ninguna transición inversa está permitida. Un paciente en `ALTA` o `DERIVADO` no puede volver a estados previos; para un nuevo ingreso se crea una nueva atención.
 
-### 3.4 Roles y permisos
+### 3.4 Permisos específicos de este módulo
+
+> Los roles del sistema están definidos en `project.md §7`.
 
 | Acción | Recepcionista | Enfermero | Médico |
 |--------|:---:|:---:|:---:|
@@ -143,59 +147,14 @@ Ninguna transición inversa está permitida. Un paciente en `ALTA` o `DERIVADO` 
 | Registrar atención y cierre | ❌ | ❌ | ✅ |
 | Ver panel general | ✅ | ✅ | ✅ |
 
-> Para esta versión de práctica, el rol se selecciona en una pantalla simple al entrar al sistema (sin autenticación real). La autenticación con JWT queda fuera del alcance.
-
 ---
 
-## 4. Restricciones y Decisiones Técnicas
+## 4. Restricciones técnicas específicas de este módulo
 
-### 4.1 Stack tecnológico (no negociable)
+> El stack completo, arquitectura de capas, convenciones y códigos HTTP están en `/project.md §2, §3, §4 y §5`. Acá solo van restricciones adicionales propias de este módulo.
 
-- **Frontend:** React 18 con Vite
-- **Backend:** Node.js con Express
-- **Base de datos:** PostgreSQL
-- **ORM:** Prisma
-- **Validaciones:** Zod (tanto en frontend como en backend)
-- **Estilos:** Tailwind CSS
-
-### 4.2 Restricciones de dependencias
-
-- **No instalar nuevas librerías** sin acordarlo primero. Si una tarea parece requerir una dependencia adicional, detenerse y consultar.
-- Usar `fetch` nativo del navegador para llamadas HTTP (no instalar axios).
-- No usar librerías de UI de componentes (no MUI, no Ant Design). Solo Tailwind.
-
-### 4.3 Arquitectura del backend
-
-Seguir un patrón de tres capas:
-
-```
-src/
-  controllers/    ← Recibe requests HTTP, delega, devuelve respuestas
-  services/       ← Lógica de negocio y reglas (triage, validaciones)
-  repositories/   ← Acceso a la base de datos vía Prisma
-  routes/         ← Definición de endpoints
-  middlewares/    ← Validación de esquemas con Zod
-```
-
-La lógica de negocio **nunca** va en los controllers. Los controllers solo orquestan.
-
-### 4.4 Estructura del frontend
-
-```
-src/
-  pages/          ← Una página por flujo (Ingreso, Triage, Atencion, Panel)
-  components/     ← Componentes reutilizables (formularios, tabla, badge de prioridad)
-  services/       ← Funciones para llamar a la API
-  hooks/          ← Custom hooks (ej: usePatients, useTriage)
-```
-
-### 4.5 Convenciones
-
-- Nombres de variables y funciones en **camelCase** en JS/TS.
-- Nombres de tablas y columnas en la BD en **snake_case**.
-- Todos los endpoints devuelven JSON con estructura `{ data, error, message }`.
-- Los errores de validación devuelven HTTP 400 con detalle del campo fallido.
-- Los errores de negocio (ej: transición inválida de estado) devuelven HTTP 422.
+- El panel (T8) usa polling cada 30 segundos. No implementar WebSocket en esta versión.
+- Los timestamps de atención se almacenan en UTC. La conversión a hora local se hace en el frontend.
 
 ---
 
@@ -214,20 +173,11 @@ Las tareas se ejecutan **en orden**. No comenzar T2 hasta que T1 esté completa 
 - Migración ejecutada exitosamente (`prisma migrate dev`).
 - Seed con al menos 3 pacientes en diferentes estados para desarrollo.
 
+> El modelo `Paciente` está en `project.md §6`. No redefinirlo acá. Agregar solo `Atencion` al `/prisma/schema.prisma`.
+
 **Modelo esperado (referencia, puede ajustarse):**
 
 ```prisma
-model Paciente {
-  id              Int       @id @default(autoincrement())
-  dni             String    @unique
-  nombre          String
-  apellido        String
-  fechaNacimiento DateTime
-  sexo            String
-  creadoEn        DateTime  @default(now())
-  atenciones      Atencion[]
-}
-
 model Atencion {
   id              Int       @id @default(autoincrement())
   pacienteId      Int
