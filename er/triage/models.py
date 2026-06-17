@@ -269,6 +269,24 @@ class Triage(models.Model):
     def __str__(self):
         return f"Triage ESI {self.nivel_esi} - Visita {self.visita.id}"
     
+    def clean(self):
+        super().clean()
+        if not self.pk:
+            if hasattr(self, 'visita') and self.visita:
+                if self.visita.estado != VisitaEmergencia.Estado.ESPERANDO_TRIAGE:
+                    from django.core.exceptions import ValidationError
+                    raise ValidationError("La visita de emergencia no está esperando triage.")
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        if is_new:
+            self.full_clean()
+        super().save(*args, **kwargs)
+        if is_new:
+            visita = self.visita
+            visita.estado = VisitaEmergencia.Estado.ESPERANDO_ATENCION
+            visita.save(update_fields=['estado'])
+    
     @property
     def color_esi(self):
         """Retorna el color asociado al nivel ESI."""
